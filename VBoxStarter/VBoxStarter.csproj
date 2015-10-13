@@ -59,6 +59,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Service\IVBoxRunner.cs" />
+    <Compile Include="Service\VBoxRunner.cs" />
     <Compile Include="Settings.cs" />
   </ItemGroup>
   <ItemGroup>

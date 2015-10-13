@@ -1,15 +1,10 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using Topshelf;
+﻿using Topshelf;
+using VBoxStarter.Service;
 
 namespace VBoxStarter
 {
     static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         static void Main()
         {
             HostFactory
@@ -30,43 +25,5 @@ namespace VBoxStarter
                     hostConfigurator.StartAutomaticallyDelayed();
                 });
         }
-    }
-
-    internal class VBoxRunner : IVBoxRunner
-    {
-        public void Start()
-        {
-            if (Directory.Exists(Properties.Settings.Default.VirtualBoxPath))
-            {
-                if (File.Exists($@"{Properties.Settings.Default.VirtualBoxPath}\VBoxManage.exe"))
-                {
-                    var vmNames = Properties.Settings.Default.VMs.Split(',');
-                    foreach (var vmName in vmNames)
-                    {
-
-                        var processStartInfo = new ProcessStartInfo
-                        {
-                            CreateNoWindow = true,
-                            FileName = $@"{Properties.Settings.Default.VirtualBoxPath}\VBoxManage.exe",
-                            Arguments = $"startvm \"{vmName}\" --type headless",
-                            WindowStyle = ProcessWindowStyle.Hidden
-                        };
-                        Process.Start(processStartInfo);
-                    }
-                }
-            }
-        }
-
-        public void Stop()
-        {
-
-        }
-    }
-
-    internal interface IVBoxRunner
-    {
-        void Start();
-
-        void Stop();
     }
 }
