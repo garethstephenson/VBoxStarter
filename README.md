@@ -1,2 +1,2 @@
 # VBoxStarter
-A Windows Service to start VirtualBox instances in headless mode, on start up.
+A Windows Service that starts VirtualBox instances in headless mode, on start up
