@@ -21,7 +21,7 @@ namespace VBoxStarter
                     hostConfigurator.SetDisplayName("VBox Starter Service");
                     hostConfigurator.SetDescription("A Windows Service to start VirtualBox instances in headless mode, on start up");
 
-                    hostConfigurator.RunAsNetworkService();
+                    hostConfigurator.RunAsPrompt();
                     hostConfigurator.StartAutomaticallyDelayed();
                 });
         }

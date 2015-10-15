@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace VBoxStarter.Service
@@ -9,26 +10,19 @@ namespace VBoxStarter.Service
     internal class VBoxRunner : IVBoxRunner
     {
         private static readonly string VboxPath = Properties.Settings.Default.VirtualBoxPath;
-        private static readonly string VboxManageFilePath = $@"{Properties.Settings.Default.VirtualBoxPath}\VBoxManage.exe";
+        private static readonly string VboxManageFilePath = $@"{VboxPath}\VBoxManage.exe";
+        private static readonly string[] VmsToRun = Properties.Settings.Default.VMs.Split(',');
 
         public void Start()
         {
-            if (Directory.Exists(VboxPath) && File.Exists(VboxManageFilePath))
+            if (File.Exists(VboxManageFilePath))
             {
                 var listOfRunningVms = GetListOfRunningVms();
-                var vmsToRun = Properties.Settings.Default.VMs.Split(',');
-
-                foreach (var vmToRun in vmsToRun)
+                foreach (var vmToRun in VmsToRun)
                 {
                     if (!listOfRunningVms.Contains(vmToRun))
                     {
-                        var startVMProcessInfo = new ProcessStartInfo
-                        {
-                            CreateNoWindow = true,
-                            FileName = VboxManageFilePath,
-                            Arguments = $"startvm \"{vmToRun}\" --type headless",
-                            WindowStyle = ProcessWindowStyle.Hidden
-                        };
+                        var startVMProcessInfo = GetVBoxProcessStartInfo($"startvm \"{vmToRun}\" --type headless");
                         Process.Start(startVMProcessInfo);
                     }
                 }
@@ -42,27 +36,34 @@ namespace VBoxStarter.Service
 
         private static List<string> GetListOfRunningVms()
         {
-            var listRunningVMProcessInfo = new ProcessStartInfo
-            {
-                CreateNoWindow = true,
-                FileName = VboxManageFilePath,
-                Arguments = $"list runningvms",
-                WindowStyle = ProcessWindowStyle.Hidden,
-                RedirectStandardOutput = true,
-                UseShellExecute = false
-            };
+            const int machineNameIndex = 1;
+
+            var listRunningVmsProcessStartInfo = GetVBoxProcessStartInfo("list runningvms", true);
+            var runningVmsProcess = Process.Start(listRunningVmsProcessStartInfo);
             var runningVms = new List<string>();
-            var runningVmsProcess = Process.Start(listRunningVMProcessInfo);
+
             if (runningVmsProcess != null)
             {
                 var runningVmsOutput = runningVmsProcess.StandardOutput.ReadToEnd();
                 runningVmsProcess.WaitForExit();
 
-                var regex = new Regex("\".*\"", RegexOptions.Multiline);
-                var matches = regex.Matches(runningVmsOutput);
-                runningVms.AddRange((matches.Cast<Match>().Select(match => match.Value.Replace("\"", string.Empty))));
+                var matches = Regex.Matches(runningVmsOutput, "\"(.*)\"", RegexOptions.Multiline);
+                runningVms.AddRange((matches.Cast<Match>().Select(match => match.Groups[machineNameIndex].Value)));
             }
             return runningVms;
+        }
+
+        private static ProcessStartInfo GetVBoxProcessStartInfo(string arguments, [Optional] bool redirectStandardOutput, [Optional] bool useShellExecute)
+        {
+            return new ProcessStartInfo
+            {
+                CreateNoWindow = true,
+                FileName = VboxManageFilePath,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                RedirectStandardOutput = redirectStandardOutput,
+                Arguments = arguments,
+                UseShellExecute = useShellExecute
+            };
         }
     }
 }
