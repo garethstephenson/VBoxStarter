@@ -23,7 +23,8 @@ namespace VBoxStarter.Service
                     if (!listOfRunningVms.Contains(vmToRun))
                     {
                         var startVMProcessInfo = GetVBoxProcessStartInfo($"startvm \"{vmToRun}\" --type headless");
-                        Process.Start(startVMProcessInfo);
+                        var process = Process.Start(startVMProcessInfo);
+                        process?.WaitForExit();
                     }
                 }
             }
