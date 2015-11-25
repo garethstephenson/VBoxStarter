@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace VBoxStarter.Service
@@ -11,22 +10,20 @@ namespace VBoxStarter.Service
     {
         private static readonly string VboxPath = Properties.Settings.Default.VirtualBoxPath;
         private static readonly string VboxManageFilePath = $@"{VboxPath}\VBoxManage.exe";
-        private static readonly string[] VmsToRun = Properties.Settings.Default.VMs.Split(',');
+        private static readonly IEnumerable<string> VmsToRun = Properties.Settings.Default.VMs.Split(',');
 
         public void Start()
         {
-            if (File.Exists(VboxManageFilePath))
+            if (!File.Exists(VboxManageFilePath)) return;
+
+            var listOfRunningVms = GetListOfRunningVms();
+            var vmsNotRunning = VmsToRun.Except(listOfRunningVms);
+
+            foreach (var vmToRun in vmsNotRunning)
             {
-                var listOfRunningVms = GetListOfRunningVms();
-                foreach (var vmToRun in VmsToRun)
-                {
-                    if (!listOfRunningVms.Contains(vmToRun))
-                    {
-                        var startVMProcessInfo = GetVBoxProcessStartInfo($"startvm \"{vmToRun}\" --type headless");
-                        var process = Process.Start(startVMProcessInfo);
-                        process?.WaitForExit();
-                    }
-                }
+                var startVMProcessInfo = GetVBoxProcessStartInfo($"startvm \"{vmToRun}\" --type headless");
+                var process = Process.Start(startVMProcessInfo);
+                process?.WaitForExit();
             }
         }
 
@@ -35,7 +32,7 @@ namespace VBoxStarter.Service
 
         }
 
-        private static List<string> GetListOfRunningVms()
+        private static IEnumerable<string> GetListOfRunningVms()
         {
             const int machineNameIndex = 1;
 
@@ -43,18 +40,17 @@ namespace VBoxStarter.Service
             var runningVmsProcess = Process.Start(listRunningVmsProcessStartInfo);
             var runningVms = new List<string>();
 
-            if (runningVmsProcess != null)
-            {
-                var runningVmsOutput = runningVmsProcess.StandardOutput.ReadToEnd();
-                runningVmsProcess.WaitForExit();
+            if (runningVmsProcess == null) return runningVms;
 
-                var matches = Regex.Matches(runningVmsOutput, "\"(.*)\"", RegexOptions.Multiline);
-                runningVms.AddRange((matches.Cast<Match>().Select(match => match.Groups[machineNameIndex].Value)));
-            }
+            var runningVmsOutput = runningVmsProcess.StandardOutput.ReadToEnd();
+            runningVmsProcess.WaitForExit();
+
+            var matches = Regex.Matches(runningVmsOutput, "\"(.*)\"", RegexOptions.Multiline);
+            runningVms.AddRange(matches.Cast<Match>().Select(match => match.Groups[machineNameIndex].Value));
             return runningVms;
         }
 
-        private static ProcessStartInfo GetVBoxProcessStartInfo(string arguments, [Optional] bool redirectStandardOutput, [Optional] bool useShellExecute)
+        private static ProcessStartInfo GetVBoxProcessStartInfo(string arguments, bool redirectStandardOutput = false, bool useShellExecute = false)
         {
             return new ProcessStartInfo
             {
