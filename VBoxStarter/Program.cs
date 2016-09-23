@@ -3,9 +3,9 @@ using VBoxStarter.Service;
 
 namespace VBoxStarter
 {
-    static class Program
+    public static class Program
     {
-        static void Main()
+        public static void Main()
         {
             HostFactory
                 .Run(hostConfigurator =>

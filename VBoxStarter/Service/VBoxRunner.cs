@@ -3,14 +3,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using VBoxStarter.Properties;
 
 namespace VBoxStarter.Service
 {
     internal class VBoxRunner : IVBoxRunner
     {
-        private static readonly string VboxPath = Properties.Settings.Default.VirtualBoxPath;
+        private static readonly string VboxPath = Settings.Default.VirtualBoxPath;
         private static readonly string VboxManageFilePath = $@"{VboxPath}\VBoxManage.exe";
-        private static readonly IEnumerable<string> VmsToRun = Properties.Settings.Default.VMs.Split(',');
+        private static readonly IEnumerable<string> VmsToRun = Settings.Default.VMs.Split(',');
 
         public void Start()
         {
@@ -22,8 +24,8 @@ namespace VBoxStarter.Service
             foreach (var vmToRun in vmsNotRunning)
             {
                 var startVMProcessInfo = GetVBoxProcessStartInfo($"startvm \"{vmToRun}\" --type headless");
-                var process = Process.Start(startVMProcessInfo);
-                process?.WaitForExit();
+                Process.Start(startVMProcessInfo);
+                Thread.Sleep(Settings.Default.ProcessExitWaitTimeSeconds * 1000);
             }
         }
 

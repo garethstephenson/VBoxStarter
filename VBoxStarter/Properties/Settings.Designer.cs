@@ -40,5 +40,14 @@ namespace VBoxStarter.Properties {
                 return ((string)(this["VMs"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public int ProcessExitWaitTimeSeconds {
+            get {
+                return ((int)(this["ProcessExitWaitTimeSeconds"]));
+            }
+        }
     }
 }
