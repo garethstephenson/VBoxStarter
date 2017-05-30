@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -16,7 +17,7 @@ namespace VBoxStarter.Service
 
         public void Start()
         {
-            if (!File.Exists(VboxManageFilePath)) return;
+            AssertVBoxManageFound();
 
             var listOfRunningVms = GetListOfRunningVms();
             var vmsNotRunning = VmsToRun.Except(listOfRunningVms);
@@ -29,9 +30,10 @@ namespace VBoxStarter.Service
             }
         }
 
-        public void Stop()
+        private static void AssertVBoxManageFound()
         {
-
+            if (!File.Exists(VboxManageFilePath))
+                throw new ApplicationException("VirtualBox VBoxManage.exe not found. Please check settings.");
         }
 
         private static IEnumerable<string> GetListOfRunningVms()
@@ -40,8 +42,8 @@ namespace VBoxStarter.Service
 
             var listRunningVmsProcessStartInfo = GetVBoxProcessStartInfo("list runningvms", true);
             var runningVmsProcess = Process.Start(listRunningVmsProcessStartInfo);
-            var runningVms = new List<string>();
 
+            var runningVms = new List<string>();
             if (runningVmsProcess == null) return runningVms;
 
             var runningVmsOutput = runningVmsProcess.StandardOutput.ReadToEnd();
@@ -63,6 +65,11 @@ namespace VBoxStarter.Service
                 Arguments = arguments,
                 UseShellExecute = useShellExecute
             };
+        }
+
+        public void Stop()
+        {
+
         }
     }
 }
